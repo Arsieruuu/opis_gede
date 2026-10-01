@@ -112,6 +112,7 @@ export interface LombaPengajuan {
   dosenPembimbingId: string;
   dosenPembimbingNama: string;
   status: LombaStatus;
+  statusPelaporan?: LombaReportingStatus;
   catatanDosen?: string;
   catatanWadir3?: string;
   createdAt: string;
@@ -138,4 +139,76 @@ export interface LombaProposal {
   version: number;
   summary: string;
   fileUrl?: string;
+}
+
+export type SuratJenis = 'Surat Tugas' | 'Surat Dispensasi';
+export type SuratApprovalStatus = 'pending' | 'approved' | 'rejected';
+export type SuratWorkflowStatus =
+  | 'diajukan'
+  | 'review_prodi'
+  | 'administrasi_jurusan'
+  | 'review_jurusan'
+  | 'review_wadir3'
+  | 'final_ready'
+  | 'ditolak';
+
+export interface SuratPengajuan {
+  id: string;
+  mahasiswaId: string;
+  mahasiswaNama: string;
+  npm: string;
+  jenis: SuratJenis;
+  tujuanKegiatan: string;
+  penyelenggara: string;
+  tanggalMulai: string;
+  tanggalSelesai: string;
+  status: SuratWorkflowStatus;
+  substansiStatus: SuratApprovalStatus;
+  anggaranStatus: SuratApprovalStatus;
+  isFinalReady: boolean;
+  createdAt: string;
+}
+
+export interface SuratAnggaran {
+  id: string;
+  suratPengajuanId: string;
+  item: string;
+  nominal: number;
+  keterangan?: string;
+}
+
+export interface SuratGeneratedFiles {
+  id: string;
+  suratPengajuanId: string;
+  fileDraftGenerated?: string;
+  fileFinalScanned?: string;
+  generatedAt?: string;
+  uploadedAt?: string;
+}
+
+export interface SuratApprovalHistory {
+  id: string;
+  suratPengajuanId: string;
+  actorId: string;
+  actorName: string;
+  actorRole: UserRole;
+  stage: 'prodi' | 'admin_jurusan' | 'jurusan' | 'wadir3';
+  action: 'submitted' | 'approved' | 'rejected' | 'draft_generated' | 'final_uploaded';
+  note: string;
+  createdAt: string;
+}
+
+export type LombaReportingStatus = 'belum_dilaporkan' | 'menunggu_validasi' | 'selesai' | 'ditolak';
+
+export interface LombaReport {
+  id: string;
+  pengajuanId: string;
+  mahasiswaId: string;
+  fileSertifikat: string;
+  fileLaporan: string;
+  ringkasan: string;
+  statusPelaporan: LombaReportingStatus;
+  catatanProdi?: string;
+  submittedAt: string;
+  validatedAt?: string;
 }

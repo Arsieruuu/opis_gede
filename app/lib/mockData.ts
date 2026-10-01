@@ -10,6 +10,11 @@ import {
   LombaPengajuan,
   LombaMember,
   LombaProposal
+  ,SuratPengajuan,
+  SuratAnggaran,
+  SuratGeneratedFiles,
+  SuratApprovalHistory,
+  LombaReport
 } from './types';
 
 export const INITIAL_USERS: User[] = [
@@ -253,6 +258,7 @@ export const INITIAL_PENGAJUAN: LombaPengajuan[] = [
     dosenPembimbingId: 'dsn_1',
     dosenPembimbingNama: 'Dr. Ir. Hendra Wijaya, M.Kom',
     status: 'menunggu_review_dosen',
+    statusPelaporan: 'belum_dilaporkan',
     catatanDosen: 'Proposal sudah masuk, sedang ditinjau arsitektur sistem dan kesiapan berkas anggota tim.',
     createdAt: '2026-09-29'
   },
@@ -271,6 +277,7 @@ export const INITIAL_PENGAJUAN: LombaPengajuan[] = [
     dosenPembimbingId: 'dsn_1',
     dosenPembimbingNama: 'Dr. Ir. Hendra Wijaya, M.Kom',
     status: 'disetujui_wadir3',
+    statusPelaporan: 'menunggu_validasi',
     catatanDosen: 'Ide sangat inovatif dan relevan dengan fokus riset kampus. Direkomendasikan penuh pendanaan.',
     catatanWadir3: 'Disetujui untuk delegasi resmi universitas. Subsidi dana pendaftaran dan akomodasi Rp 12.500.000 dicairkan.',
     createdAt: '2026-09-10'
@@ -345,4 +352,42 @@ export const INITIAL_PROPOSALS: LombaProposal[] = [
     summary: 'Proposal resmi delegasi lomba internasional ASEAN Cyber Defense & Blockchain 2026 beserta rincian RAB.',
     fileUrl: '#'
   }
+];
+
+export const INITIAL_SURAT_PENGAJUAN: SuratPengajuan[] = [
+  {
+    id: 'surat_001',
+    mahasiswaId: 'mhs_1',
+    mahasiswaNama: 'Aria Pratama',
+    npm: '2110511042',
+    jenis: 'Surat Tugas',
+    tujuanKegiatan: 'ASEAN Cyber Defense & Blockchain Summit Challenge 2026',
+    penyelenggara: 'Singapore Cybersecurity Consortium & CyberSG',
+    tanggalMulai: '2026-12-02',
+    tanggalSelesai: '2026-12-06',
+    status: 'review_jurusan',
+    substansiStatus: 'approved',
+    anggaranStatus: 'pending',
+    isFinalReady: false,
+    createdAt: '2026-09-30'
+  }
+];
+
+export const INITIAL_SURAT_ANGGARAN: SuratAnggaran[] = [
+  { id: 'anggaran_001', suratPengajuanId: 'surat_001', item: 'Tiket perjalanan dan akomodasi', nominal: 12500000, keterangan: 'Delegasi resmi tingkat internasional' },
+  { id: 'anggaran_002', suratPengajuanId: 'surat_001', item: 'Biaya registrasi kompetisi', nominal: 1500000 }
+];
+
+export const INITIAL_SURAT_FILES: SuratGeneratedFiles[] = [
+  { id: 'file_surat_001', suratPengajuanId: 'surat_001', fileDraftGenerated: 'Draft_ST_2026-091.pdf', generatedAt: '2026-10-01 09:10 WIB' }
+];
+
+export const INITIAL_SURAT_APPROVAL_HISTORIES: SuratApprovalHistory[] = [
+  { id: 'hist_001', suratPengajuanId: 'surat_001', actorId: 'mhs_1', actorName: 'Aria Pratama', actorRole: 'mahasiswa', stage: 'prodi', action: 'submitted', note: 'Pengajuan surat tugas beserta rincian anggaran dikirim.', createdAt: '2026-09-30 14:20 WIB' },
+  { id: 'hist_002', suratPengajuanId: 'surat_001', actorId: 'user_prodi_1', actorName: 'Admin Prodi S1 Informatika', actorRole: 'prodi', stage: 'prodi', action: 'approved', note: 'Substansi dan rincian awal telah divalidasi Prodi.', createdAt: '2026-09-30 16:05 WIB' },
+  { id: 'hist_003', suratPengajuanId: 'surat_001', actorId: 'user_jurusan_1', actorName: 'Admin Jurusan Teknik Informatika & Komputer', actorRole: 'jurusan', stage: 'admin_jurusan', action: 'draft_generated', note: 'Draft surat dibuat dan menunggu approval terintegrasi Jurusan.', createdAt: '2026-10-01 09:10 WIB' }
+];
+
+export const INITIAL_LOMBA_REPORTS: LombaReport[] = [
+  { id: 'report_001', pengajuanId: 'lomba_002', mahasiswaId: 'mhs_1', fileSertifikat: 'Sertifikat_ASEAN_Cyber_2026.pdf', fileLaporan: 'Laporan_ASEAN_Cyber_2026.pdf', ringkasan: 'Tim masuk Top 3 dan menerima penghargaan Best Defense Concept.', statusPelaporan: 'menunggu_validasi', submittedAt: '2026-12-20 13:20 WIB' }
 ];

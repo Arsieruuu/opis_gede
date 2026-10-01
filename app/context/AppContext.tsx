@@ -13,7 +13,13 @@ import {
   StudentExperience,
   LombaPengajuan,
   LombaMember,
-  LombaProposal
+  LombaProposal,
+  SuratPengajuan,
+  SuratAnggaran,
+  SuratGeneratedFiles,
+  SuratApprovalHistory,
+  LombaReport,
+  SuratApprovalStatus
 } from '../lib/types';
 import {
   INITIAL_USERS,
@@ -26,7 +32,12 @@ import {
   INITIAL_EXPERIENCES,
   INITIAL_PENGAJUAN,
   INITIAL_MEMBERS,
-  INITIAL_PROPOSALS
+  INITIAL_PROPOSALS,
+  INITIAL_SURAT_PENGAJUAN,
+  INITIAL_SURAT_ANGGARAN,
+  INITIAL_SURAT_FILES,
+  INITIAL_SURAT_APPROVAL_HISTORIES,
+  INITIAL_LOMBA_REPORTS
 } from '../lib/mockData';
 
 interface AppContextType {
@@ -42,6 +53,11 @@ interface AppContextType {
   pengajuanList: LombaPengajuan[];
   membersList: LombaMember[];
   proposalsList: LombaProposal[];
+  suratPengajuanList: SuratPengajuan[];
+  suratAnggaranList: SuratAnggaran[];
+  suratFilesList: SuratGeneratedFiles[];
+  suratApprovalHistories: SuratApprovalHistory[];
+  lombaReports: LombaReport[];
   isSyncingSatset: boolean;
   notificationMessage: string | null;
   
@@ -74,6 +90,21 @@ interface AppContextType {
   reviewByDosen: (pengajuanId: string, action: 'approve' | 'revisi' | 'reject', catatan: string) => void;
   verifikasiByProdi: (pengajuanId: string, approve: boolean) => void;
   approvalByWadir3: (pengajuanId: string, approve: boolean, dana?: number, catatan?: string) => void;
+
+  // Surat approval workflow
+  submitSuratPengajuan: (
+    data: Omit<SuratPengajuan, 'id' | 'status' | 'substansiStatus' | 'anggaranStatus' | 'isFinalReady' | 'createdAt' | 'mahasiswaId' | 'mahasiswaNama' | 'npm'>,
+    anggaran: Omit<SuratAnggaran, 'id' | 'suratPengajuanId'>[]
+  ) => void;
+  reviewSuratByProdi: (suratId: string, approve: boolean, note: string) => void;
+  generateSuratDraft: (suratId: string, fileName: string) => void;
+  reviewSuratByJurusan: (suratId: string, substansi: SuratApprovalStatus, anggaran: SuratApprovalStatus, note: string) => void;
+  approveSuratByWadir3: (suratId: string, approve: boolean, note: string) => void;
+  uploadSuratFinal: (suratId: string, fileName: string) => void;
+
+  // Lomba reporting workflow
+  submitLombaReport: (data: { pengajuanId: string; fileSertifikat: string; fileLaporan: string; ringkasan: string }) => void;
+  validateLombaReportByProdi: (reportId: string, approve: boolean, note: string) => void;
   
   // CV & Skills Actions
   addSkill: (skill: { nama: string; kategori: StudentSkill['kategori']; percentage: number }) => void;
@@ -102,6 +133,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [pengajuanList, setPengajuanList] = useState<LombaPengajuan[]>(INITIAL_PENGAJUAN);
   const [membersList, setMembersList] = useState<LombaMember[]>(INITIAL_MEMBERS);
   const [proposalsList, setProposalsList] = useState<LombaProposal[]>(INITIAL_PROPOSALS);
+  const [suratPengajuanList, setSuratPengajuanList] = useState<SuratPengajuan[]>(INITIAL_SURAT_PENGAJUAN);
+  const [suratAnggaranList, setSuratAnggaranList] = useState<SuratAnggaran[]>(INITIAL_SURAT_ANGGARAN);
+  const [suratFilesList, setSuratFilesList] = useState<SuratGeneratedFiles[]>(INITIAL_SURAT_FILES);
+  const [suratApprovalHistories, setSuratApprovalHistories] = useState<SuratApprovalHistory[]>(INITIAL_SURAT_APPROVAL_HISTORIES);
+  const [lombaReports, setLombaReports] = useState<LombaReport[]>(INITIAL_LOMBA_REPORTS);
 
   const [isSyncingSatset, setIsSyncingSatset] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
@@ -396,6 +432,124 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     triggerToast(approve ? 'Pengajuan Resmi disetujui Wadir III & Didanai!' : 'Pengajuan ditolak oleh Wadir III.');
   };
 
+  const addSuratHistory = (
+    suratId: string,
+    stage: SuratApprovalHistory['stage'],
+    action: SuratApprovalHistory['action'],
+    note: string
+  ) => {
+    if (!currentUser) return;
+    setSuratApprovalHistories((prev) => [
+      ...prev,
+      {
+        id: `hist_surat_${Date.now()}`,
+        suratPengajuanId: suratId,
+        actorId: currentUser.id,
+        actorName: currentUser.name,
+        actorRole: currentUser.role,
+        stage,
+        action,
+        note,
+        createdAt: new Date().toLocaleString('id-ID')
+      }
+    ]);
+  };
+
+  const submitSuratPengajuan = (
+    data: Omit<SuratPengajuan, 'id' | 'status' | 'substansiStatus' | 'anggaranStatus' | 'isFinalReady' | 'createdAt' | 'mahasiswaId' | 'mahasiswaNama' | 'npm'>,
+    anggaran: Omit<SuratAnggaran, 'id' | 'suratPengajuanId'>[]
+  ) => {
+    if (!currentUser || currentUser.role !== 'mahasiswa') return;
+    const profile = mahasiswaProfiles[currentUser.id];
+    const suratId = `surat_${Date.now()}`;
+    const surat: SuratPengajuan = {
+      ...data,
+      id: suratId,
+      mahasiswaId: profile?.id || currentUser.id,
+      mahasiswaNama: currentUser.name,
+      npm: profile?.npm || 'NPM-UNKNOWN',
+      status: 'review_prodi',
+      substansiStatus: 'pending',
+      anggaranStatus: 'pending',
+      isFinalReady: false,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    setSuratPengajuanList((prev) => [surat, ...prev]);
+    setSuratAnggaranList((prev) => [
+      ...prev,
+      ...anggaran.map((item, index) => ({ ...item, id: `anggaran_${Date.now()}_${index}`, suratPengajuanId: suratId }))
+    ]);
+    addSuratHistory(suratId, 'prodi', 'submitted', 'Pengajuan surat dan rincian anggaran dikirim untuk review Prodi.');
+    triggerToast('Pengajuan surat berhasil dikirim ke antrean Prodi.');
+  };
+
+  const reviewSuratByProdi = (suratId: string, approve: boolean, note: string) => {
+    setSuratPengajuanList((prev) => prev.map((surat) => surat.id === suratId ? {
+      ...surat,
+      status: approve ? 'administrasi_jurusan' : 'ditolak',
+      substansiStatus: approve ? 'approved' : 'rejected',
+      anggaranStatus: approve ? 'approved' : 'rejected'
+    } : surat));
+    addSuratHistory(suratId, 'prodi', approve ? 'approved' : 'rejected', note || 'Review Prodi selesai.');
+    triggerToast(approve ? 'Substansi dan anggaran surat lolos validasi Prodi.' : 'Pengajuan surat ditolak oleh Prodi.');
+  };
+
+  const generateSuratDraft = (suratId: string, fileName: string) => {
+    setSuratPengajuanList((prev) => prev.map((surat) => surat.id === suratId ? { ...surat, status: 'review_jurusan' } : surat));
+    setSuratFilesList((prev) => {
+      const existing = prev.find((file) => file.suratPengajuanId === suratId);
+      if (existing) return prev.map((file) => file.suratPengajuanId === suratId ? { ...file, fileDraftGenerated: fileName, generatedAt: new Date().toLocaleString('id-ID') } : file);
+      return [...prev, { id: `file_surat_${Date.now()}`, suratPengajuanId: suratId, fileDraftGenerated: fileName, generatedAt: new Date().toLocaleString('id-ID') }];
+    });
+    addSuratHistory(suratId, 'admin_jurusan', 'draft_generated', `Draft surat ${fileName} berhasil dibuat.`);
+    triggerToast('Draft surat berhasil dibuat dan diteruskan ke Jurusan.');
+  };
+
+  const reviewSuratByJurusan = (suratId: string, substansi: SuratApprovalStatus, anggaran: SuratApprovalStatus, note: string) => {
+    setSuratPengajuanList((prev) => prev.map((surat) => surat.id === suratId ? {
+      ...surat,
+      status: substansi === 'rejected' || anggaran === 'rejected' ? 'ditolak' : substansi === 'approved' && anggaran === 'approved' ? 'review_wadir3' : 'review_jurusan',
+      substansiStatus: substansi,
+      anggaranStatus: anggaran
+    } : surat));
+    addSuratHistory(suratId, 'jurusan', substansi === 'rejected' || anggaran === 'rejected' ? 'rejected' : 'approved', note || `Review Jurusan: substansi ${substansi}, anggaran ${anggaran}.`);
+    triggerToast('Review Jurusan tersimpan. Status substansi dan anggaran tetap terpisah.');
+  };
+
+  const approveSuratByWadir3 = (suratId: string, approve: boolean, note: string) => {
+    setSuratPengajuanList((prev) => prev.map((surat) => surat.id === suratId ? {
+      ...surat,
+      status: approve ? 'review_wadir3' : 'ditolak',
+      substansiStatus: approve ? 'approved' : surat.substansiStatus,
+      anggaranStatus: approve ? 'approved' : surat.anggaranStatus
+    } : surat));
+    addSuratHistory(suratId, 'wadir3', approve ? 'approved' : 'rejected', note || 'Approval akhir Wadir 3 diproses. Menunggu unggah scan final.');
+    triggerToast(approve ? 'Approval akhir Wadir 3 tersimpan. Unggah scan surat final.' : 'Pengajuan surat ditolak oleh Wadir 3.');
+  };
+
+  const uploadSuratFinal = (suratId: string, fileName: string) => {
+    setSuratPengajuanList((prev) => prev.map((surat) => surat.id === suratId ? { ...surat, status: 'final_ready', isFinalReady: true } : surat));
+    setSuratFilesList((prev) => prev.map((file) => file.suratPengajuanId === suratId ? { ...file, fileFinalScanned: fileName, uploadedAt: new Date().toLocaleString('id-ID') } : file));
+    addSuratHistory(suratId, 'wadir3', 'final_uploaded', `File final tersahkan ${fileName} tersedia untuk diunduh mahasiswa.`);
+    triggerToast('File surat final berhasil diunggah. Surat legal siap diunduh mahasiswa.');
+  };
+
+  const submitLombaReport = (data: { pengajuanId: string; fileSertifikat: string; fileLaporan: string; ringkasan: string }) => {
+    if (!currentUser) return;
+    const report: LombaReport = { id: `report_${Date.now()}`, mahasiswaId: currentUser.id, statusPelaporan: 'menunggu_validasi', submittedAt: new Date().toLocaleString('id-ID'), ...data };
+    setLombaReports((prev) => [report, ...prev]);
+    setPengajuanList((prev) => prev.map((pengajuan) => pengajuan.id === data.pengajuanId ? { ...pengajuan, statusPelaporan: 'menunggu_validasi' } : pengajuan));
+    triggerToast('Laporan dan sertifikat tersimpan. Menunggu validasi Prodi.');
+  };
+
+  const validateLombaReportByProdi = (reportId: string, approve: boolean, note: string) => {
+    const report = lombaReports.find((item) => item.id === reportId);
+    if (!report) return;
+    setLombaReports((prev) => prev.map((item) => item.id === reportId ? { ...item, statusPelaporan: approve ? 'selesai' : 'ditolak', catatanProdi: note, validatedAt: new Date().toLocaleString('id-ID') } : item));
+    setPengajuanList((prev) => prev.map((pengajuan) => pengajuan.id === report.pengajuanId ? { ...pengajuan, statusPelaporan: approve ? 'selesai' : 'ditolak' } : pengajuan));
+    triggerToast(approve ? 'Laporan tervalidasi. Mahasiswa dapat mengajukan kegiatan pada periode berikutnya.' : 'Laporan dikembalikan untuk diperbaiki.');
+  };
+
   // CV & Skills Actions
   const addSkill = (newSkill: { nama: string; kategori: StudentSkill['kategori']; percentage: number }) => {
     const currentMhs = currentUser ? mahasiswaProfiles[currentUser.id] : null;
@@ -500,6 +654,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         pengajuanList,
         membersList,
         proposalsList,
+        suratPengajuanList,
+        suratAnggaranList,
+        suratFilesList,
+        suratApprovalHistories,
+        lombaReports,
         isSyncingSatset,
         notificationMessage,
         loginAsUser,
@@ -511,6 +670,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         reviewByDosen,
         verifikasiByProdi,
         approvalByWadir3,
+        submitSuratPengajuan,
+        reviewSuratByProdi,
+        generateSuratDraft,
+        reviewSuratByJurusan,
+        approveSuratByWadir3,
+        uploadSuratFinal,
+        submitLombaReport,
+        validateLombaReportByProdi,
         addSkill,
         deleteSkill,
         updateSkillPercentage,
