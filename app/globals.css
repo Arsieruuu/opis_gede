@@ -1,26 +1,113 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #f4f6ef;
+    --foreground: #18231f;
+    --rintis-ink: #18231f;
+    --rintis-sage: #b8cdbb;
+    --rintis-moss: #557462;
+    --rintis-coral: #e98263;
+    --rintis-paper: #f4f6ef;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--rintis-paper);
+  color: var(--rintis-ink);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* RINTIS uses a quiet cartographic texture instead of a generic tech grid. */
+.rintis-grid-bg {
+  background-color: var(--rintis-paper);
+  background-image:
+    linear-gradient(115deg, transparent 0 47%, rgba(85, 116, 98, 0.08) 47.2% 47.6%, transparent 47.8%),
+    linear-gradient(25deg, transparent 0 68%, rgba(233, 130, 99, 0.1) 68.2% 68.7%, transparent 68.9%),
+    radial-gradient(circle at 15% 20%, rgba(184, 205, 187, 0.22), transparent 0 18%),
+    radial-gradient(circle at 84% 12%, rgba(233, 130, 99, 0.08), transparent 0 15%);
+  background-size: 520px 360px, 680px 420px, auto, auto;
+  background-position: 0 0, 120px 40px, 0 0, 0 0;
+}
+
+.perspective-grid {
+  background-image: 
+    linear-gradient(to right, rgba(203, 213, 225, 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(203, 213, 225, 0.5) 1px, transparent 1px);
+  background-size: 50px 50px;
+  transform: perspective(600px) rotateX(25deg);
+  transform-origin: top center;
+}
+
+/* Floating Animations for Quote Cards */
+@keyframes floatSlow1 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(-0.5deg); }
+}
+
+@keyframes floatSlow2 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(0.8deg); }
+}
+
+@keyframes floatSlow3 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(-0.8deg); }
+}
+
+@keyframes floatSlow4 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-9px) rotate(0.5deg); }
+}
+
+.animate-float-1 {
+  animation: floatSlow1 5s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: floatSlow2 6s ease-in-out infinite 0.5s;
+}
+
+.animate-float-3 {
+  animation: floatSlow3 5.5s ease-in-out infinite 1s;
+}
+
+.animate-float-4 {
+  animation: floatSlow4 6.5s ease-in-out infinite 1.5s;
+}
+
+/* Card Elevation & Shadows */
+.rintis-card-shadow {
+  box-shadow: 0 22px 50px -24px rgba(24, 35, 31, 0.24), 0 0 0 1px rgba(24, 35, 31, 0.06);
+}
+
+.rintis-nav-shadow {
+  box-shadow: 0 18px 38px -18px rgba(24, 35, 31, 0.3), 0 0 0 1px rgba(85, 116, 98, 0.2);
+}
+
+.rintis-hero-title {
+  background: linear-gradient(110deg, #557462 0%, #8aa991 48%, #e98263 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Kept as compatibility aliases for the authenticated workspace components. */
+.sacset-card-shadow { box-shadow: 0 22px 50px -24px rgba(24, 35, 31, 0.24), 0 0 0 1px rgba(24, 35, 31, 0.06); }
+.sacset-nav-shadow { box-shadow: 0 18px 38px -18px rgba(24, 35, 31, 0.3), 0 0 0 1px rgba(85, 116, 98, 0.2); }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--rintis-moss);
 }
